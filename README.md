@@ -1,5 +1,5 @@
 # jkeutils
-Some magical python function made possible by LLMs. Openai usage much simplified.
+Some simple python function (translate, aichat) made possible by LLMs. Openai usage much simplified.
 
 ## Setup
 Put OPENAI_API_KEY in your environment variable. 
