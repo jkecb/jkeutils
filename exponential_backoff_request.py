@@ -5,11 +5,11 @@ import requests
 # Some districts need this.
 #
 # # Usage:
-# requester = requestsss.ExponentialBackoffRequest()
+# requester = requestsss.EBRequest()
 # response = requester.get("https://example.com/api/data")
 # print(response.json())
 
-class ExponentialBackoffRequest:
+class EBRequest:
     def __init__(self, max_retries=5, base_delay=0.125, max_delay=16.0, backoff_factor=2):
         self.max_retries = max_retries
         self.base_delay = base_delay
