@@ -1,8 +1,8 @@
 import json
 import os
-from .exponential_backoff_request import EBRequest
+from .exponential_backoff_request import ExponentialBackoffRequest
 
-def aichat(user_message, system_message="", model="gpt-3.5-turbo", return_json=False):
+def askai(user_message, system_message="", model="gpt-3.5-turbo", return_json=False):
     openai_api_key = os.environ.get("OPENAI_API_KEY")
     if not openai_api_key:
         raise ValueError("Please set the OPENAI_API_KEY environment variable.")
@@ -22,7 +22,7 @@ def aichat(user_message, system_message="", model="gpt-3.5-turbo", return_json=F
         "messages": messages
     }
 
-    requester = EBRequest()
+    requester = ExponentialBackoffRequest()
     response = requester.post(endpoint, headers=headers, data=json.dumps(payload))
 
     if response.status_code == 200:
@@ -35,12 +35,9 @@ def aichat(user_message, system_message="", model="gpt-3.5-turbo", return_json=F
     else:
         response.raise_for_status()
 
-def translate(text, target_language="Simplified Chinese"):
+def translate(text, target_language="English"):
     system_message = "You are a professional translator. You translate accurately, fluently and reliably."
     user_message = f"Translate to {target_language}, return only translated content, don't include original text. Text to be translated:\n{text}"
 
-    response_data = aichat(user_message,system_message)
-    translation = response_data.get("response", "")
-
-    return translation
+    return askai(user_message,system_message)
 
