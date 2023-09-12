@@ -8,9 +8,9 @@ export OPENAI_API_KEY='sk-...'
 ```
 
 Then,
-'''sh
+```sh
 pip install git+https://github.com/jkecb/jkeutils
-'''
+```
 
 ## Usage
 
