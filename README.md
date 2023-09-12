@@ -15,7 +15,7 @@ pip install git+https://github.com/jkecb/jkeutils
 ## Usage
 
 ```python
->>> from jkeutils import aichat, translate
+>>> from jkeutils import askai, translate
 >>> translate("Hello world!", target_language="Simplified Chinese")
 '你好，世界！'
 >>> askai("Who's Joe Biden?")
