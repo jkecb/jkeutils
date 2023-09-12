@@ -1,6 +1,6 @@
 import json
 import os
-from exponential_backoff_request import EBRequest
+from .exponential_backoff_request import EBRequest
 
 def aichat(user_message, system_message="", model="gpt-3.5-turbo"):
     openai_api_key = os.environ.get("OPENAI_API_KEY")
