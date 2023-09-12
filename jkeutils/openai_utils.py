@@ -2,7 +2,7 @@ import json
 import os
 from .exponential_backoff_request import EBRequest
 
-def aichat(user_message, system_message="", model="gpt-3.5-turbo"):
+def aichat(user_message, system_message="", model="gpt-3.5-turbo", return_json=False):
     openai_api_key = os.environ.get("OPENAI_API_KEY")
     if not openai_api_key:
         raise ValueError("Please set the OPENAI_API_KEY environment variable.")
@@ -27,8 +27,11 @@ def aichat(user_message, system_message="", model="gpt-3.5-turbo"):
 
     if response.status_code == 200:
         response_data = response.json()
-        response_data["response"] = response_data["choices"][-1]["message"]["content"].strip()
-        return response_data
+        if return_json:
+            return response_data
+        else:
+            return response_data["choices"][-1]["message"]["content"].strip()
+            
     else:
         response.raise_for_status()
 
