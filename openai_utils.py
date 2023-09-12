@@ -1,6 +1,6 @@
 import json
 import os
-from requestsss import ExponentialBackoffRequest  # Assuming this is the name of the other file
+from exponential_backoff_request import ExponentialBackoffRequest
 
 def openai_post(user_message, system_message="", model="gpt-3.5-turbo"):
     openai_api_key = os.environ.get("OPENAI_API_KEY")
