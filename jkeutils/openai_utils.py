@@ -1,8 +1,8 @@
 import json
 import os
-from .exponential_backoff_request import ExponentialBackoffRequest
+from .exponential_backoff_request import AsyncExponentialBackoffRequest
 
-def askai(user_message, system_message="", model="gpt-3.5-turbo", return_json=False):
+async def askai(user_message, system_message="", model="gpt-3.5-turbo", return_json=False):
     openai_api_key = os.environ.get("OPENAI_API_KEY")
     if not openai_api_key:
         raise ValueError("Please set the OPENAI_API_KEY environment variable.")
@@ -22,22 +22,23 @@ def askai(user_message, system_message="", model="gpt-3.5-turbo", return_json=Fa
         "messages": messages
     }
 
-    requester = ExponentialBackoffRequest()
-    response = requester.post(endpoint, headers=headers, data=json.dumps(payload))
+    requester = AsyncExponentialBackoffRequest()
+    response = await requester.post(endpoint, headers=headers, json=payload)  # Using json=payload directly
 
-    if response.status_code == 200:
-        response_data = response.json()
+    if response.status == 200:  # Using .status instead of .status_code
+        response_data = await response.json()  # await the asynchronous .json() method
         if return_json:
             return response_data
         else:
             return response_data["choices"][-1]["message"]["content"].strip()
             
     else:
-        response.raise_for_status()
+        response.raise_for_status()  # This remains the same, but be sure aiohttp has this method. If not, you might need to raise an exception manually based on the status code.
 
-def translate(text, target_language="English"):
+
+async def translate(text, target_language="English"):
     system_message = "You are a professional translator. You translate accurately, fluently and reliably."
     user_message = f"Translate to {target_language}, return only translated content, don't include original text. Text to be translated:\n{text}"
 
-    return askai(user_message,system_message)
+    return await askai(user_message,system_message)
 

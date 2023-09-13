@@ -1,2 +1,2 @@
 from .openai_utils import askai, translate
-from .exponential_backoff_request import ExponentialBackoffRequest
+from .exponential_backoff_request import AsyncExponentialBackoffRequest
