@@ -9,7 +9,6 @@ setup(
         'asyncio',
         'aiohttp',
         'tiktoken',
-        'openai',
-        're'
+        'openai'
     ],
 )

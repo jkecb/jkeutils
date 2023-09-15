@@ -97,7 +97,8 @@ async def translate(text, target_language="English", model="gpt-3.5-turbo",sente
         if num_tokens < 5000:
             print(f"Part using gpt-3.5-turbo-16k instead as input has {num_tokens} tokens")
             model="gpt-3.5-turbo-16k"
-        elif num_tokens>5000: # Translate half at a time.
+        elif num_tokens>=5000: # Translate half at a time.
+            print(f'Too long, spliting...')
             if '。' in text:
                 sentence_spliter='。'
             if '. ' in text:
