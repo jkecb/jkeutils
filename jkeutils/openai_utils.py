@@ -91,14 +91,13 @@ async def translate(text, target_language="English", model="gpt-3.5-turbo",sente
     # Check model length
     num_tokens=count_tokens(user_message+system_message)
     model_length=model_token_length(model)
-    # if model_length is not None and num_tokens > model_length:
-    #     raise ValueError(f"The input has {num_tokens} tokens, which exceeds the model's limit of {model_length} tokens.")
     if model_length is None :
         model_length=4000
-        if num_tokens > 2000 and num_tokens < 5000:
+    if num_tokens > model_length/2 :
+        if num_tokens < 5000:
             print(f"Part using gpt-3.5-turbo-16k instead as input has {num_tokens} tokens")
             model="gpt-3.5-turbo-16k"
-        elif num_tokens>5000:
+        elif num_tokens>5000: # Translate half at a time.
             if '。' in text:
                 sentence_spliter='。'
             if '. ' in text:
