@@ -6,9 +6,7 @@ import re
 import openai
 import asyncio
 
-async def askai(user_message, system_message="", model="gpt-3.5-turbo", return_json=False, requester=AsyncExponentialBackoffRequest()):
-    if requester=='openai':
-        return askai_openai(user_message,system_message,model,return_json)
+async def askai(user_message, system_message="", model="gpt-3.5-turbo", return_json=False):
     
     openai_api_key = os.environ.get("OPENAI_API_KEY")
     if not openai_api_key:
@@ -19,10 +17,16 @@ async def askai(user_message, system_message="", model="gpt-3.5-turbo", return_j
         "Content-Type": "application/json",
         "Authorization": f"Bearer {openai_api_key}"
     }
-    messages = [{"role": "user", "content": user_message}]
 
-    if system_message:
-        messages.insert(0, {"role": "system", "content": system_message})
+    if isinstance(user_message, str):
+        messages = [{"role": "user", "content": user_message}]
+        if system_message:
+            messages.insert(0, {"role": "system", "content": system_message})
+    elif isinstance(user_message, list):
+        messages=user_message # TODO: Add list value check
+    else:
+        raise TypeError("user_message should be either a string or a list of strings.")
+
 
     payload = {
         "model": model,
@@ -53,15 +57,22 @@ async def askai_openai(user_message, system_message="", model="gpt-3.5-turbo", m
     :param return_json: Whether to return the full JSON response or just the content.
     :return: Model's response or full JSON response based on return_json.
     """
-    
+    if isinstance(user_message, str):
+        if system_message:
+            messages = [{"role": "system", "content": system_message}]
+        else:
+            messages = []
+        messages.append({"role": "user", "content": user_message})
+    elif isinstance(user_message, list):
+        messages=user_message # TODO: Add list value check
+    else:
+        raise TypeError("user_message should be either a string or a list of strings.")
+
     for i in range(max_retries):
         try:
-            response = await openai.ChatCompletion.create(
+            response = await openai.ChatCompletion.acreate(
                 model=model,
-                messages=[
-                    {"role": "system", "content": system_message},
-                    {"role": "user", "content": user_message}
-                ]
+                messages=messages
             )
             
             if return_json:
@@ -78,19 +89,41 @@ async def askai_openai(user_message, system_message="", model="gpt-3.5-turbo", m
 
     return None  # This will be reached if for some reason the loop completes without returning
 
-async def translate(text, target_language="English", model="gpt-3.5-turbo",sentence_spliter=None,requester=AsyncExponentialBackoffRequest()):
-    system_message = "You are a professional translator. You translate accurately, fluently and reliably."
+async def translate(text, target_language="English", model="gpt-3.5-turbo",two_pass=True):
+    system_message = "You are a professional translation engine. You translate accurately, fluently and reliably."
     user_message = f"Translate to {target_language}, return only translated content, don't include original text. Text to be translated:\n{text}"
-
-    if '\n' in text:
-        text_list=text.splitlines()
-        translated=await asyncio.gather(*[translate(text) for text in text_list])
-        clean_translated=[i.split('\n')[0] for i in translated]
-        return '\n'.join(clean_translated)    
+    translation_prompt=f'''
+You are tasked to translate some give text to: {target_language}
+Rules:
+- Retain specific terms or names of original language, and surround them with spaces, for example: "中 UN 文".
+- Divide the translation into two parts and print each result:
+1. Translate directly based on the news content, without omitting any information.
+2. Based on the first direct translation, rephrase it to make the content more easily understood and conform to {target_language} expression habits, while adhering to the original meaning.
+Return in following json format:
+{{"Direct translation":"DIRECT_TRANSLATION_TEXT"}}
+{{"Better translation":"BETTER_TRANSLATION_TEXT"}}
+Reply OK to this message and I'll send you text to be translated to {target_language} afterwards.'''
+    args = {
+        'target_language': target_language,
+        'model': model,
+        'two_pass': two_pass
+    }
     
+    # If input is list transalte every item.
+    if isinstance(text,list):
+        return await asyncio.gather(*[translate(entry,**args) for entry in text])   
+        
     # Check model length
-    num_tokens=count_tokens(user_message+system_message)
+    num_tokens=count_tokens(translation_prompt+system_message+text)
     model_length=model_token_length(model)
+
+    # If multiple paragraphs and use recursion to split.
+    if '\n' in text and num_tokens>=1200:
+        text_list=text.splitlines()
+        translated=await asyncio.gather(*[translate(text,**args) for text in text_list])
+        # clean_translated=[i.split('\n')[0] for i in translated]
+        return '\n'.join(translated)    
+    
     if model_length is None :
         model_length=4000
     if num_tokens > model_length/2 :
@@ -109,9 +142,29 @@ async def translate(text, target_language="English", model="gpt-3.5-turbo",sente
             mid=len(sentence_list) // 2
             first_half=sentence_spliter.join(sentence_list[:mid])
             second_half=sentence_spliter.join(sentence_list[mid:])
-            return sentence_spliter.join([await translate(first_half,target_language,model),await translate(second_half,target_language,model)])
-        
-    return await askai(user_message,system_message,model=model,requester=requester)
+            if 'english' in target_language.lower():
+                join_spliter='. '
+            if 'chinese' in target_language.lower():
+                join_spliter='。'
+            return join_spliter.join([await translate(first_half,**args),await translate(second_half,**args)])
+    
+    if two_pass==True:
+        dialogue_msg=[
+        {"role": "system", "content": system_message},
+        {"role": "user", "content": translation_prompt},
+        {"role": "assistant", "content": "OK"},
+        {"role": "user", "content": text}
+        ]
+
+        response_text=await askai(dialogue_msg,model=model)
+        pattern = r'{"Better translation":"(.*?)"}'
+        match = re.search(pattern, response_text)
+        if match:
+            return match.group(1)
+        else:
+            return response_text
+    else:
+        return await askai(user_message,system_message,model=model)
 
 def count_tokens(string: str, encoding_name: str = "cl100k_base") -> int:
     """Returns the number of tokens in a text string."""
