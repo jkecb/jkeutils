@@ -1,7 +1,7 @@
 # jkeutils
 Some simple python function (translate, askai) made possible by LLMs with async.
 
-## Setup
+### Setup
 Put OPENAI_API_KEY in your environment variable. 
 ```bash
 export OPENAI_API_KEY='sk-...'
@@ -12,7 +12,7 @@ Then,
 pip install git+https://github.com/jkecb/jkeutils
 ```
 
-## Usage
+### Usage
 
 ```python
 >>> from jkeutils import askai, translate
