@@ -117,7 +117,7 @@ Reply OK to this message and I'll send you text to be translated to {target_lang
     num_tokens=count_tokens(translation_prompt+system_message+text)
     model_length=model_token_length(model)
 
-    # If multiple paragraphs and use recursion to split.
+    # If multiple paragraphs and too long use recursion to split.
     if '\n' in text and num_tokens>=1200:
         text_list=text.splitlines()
         translated=await asyncio.gather(*[translate(text,**args) for text in text_list])
@@ -157,7 +157,7 @@ Reply OK to this message and I'll send you text to be translated to {target_lang
         ]
 
         response_text=await askai(dialogue_msg,model=model)
-        pattern = r'{"Better translation":"(.*?)"}'
+        pattern = r'{"Better translation"\s?:\s?"(.*?)"}'
         match = re.search(pattern, response_text)
         if match:
             return match.group(1)
