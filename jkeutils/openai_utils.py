@@ -93,15 +93,14 @@ async def translate(text, target_language="English", model="gpt-3.5-turbo",two_p
     system_message = "You are a professional translation engine. You translate accurately, fluently and reliably."
     user_message = f"Translate to {target_language}, return only translated content, don't include original text. Text to be translated:\n{text}"
     translation_prompt=f'''
-You are tasked to translate some give text to: {target_language}
-Rules:
-- Retain specific terms or names of original language, and surround them with spaces, for example: "中 UN 文".
+Translation Guideline:
+- Retain specific terms/names, put it after the translation in brackets, for example: "乔（Joe）".
 - Divide the translation into two parts and print each result:
-1. Translate directly based on the news content, without omitting any information.
+1. Translate directly based on the content, without omitting any information.
 2. Based on the first direct translation, rephrase it to make the content more easily understood and conform to {target_language} expression habits, while adhering to the original meaning.
-Return in following json format:
-{{"Direct translation":"DIRECT_TRANSLATION_TEXT"}}
-{{"Better translation":"BETTER_TRANSLATION_TEXT"}}
+Without any comment, return the result in the following python dict format:
+[{{"direct_translation": "direct translation here",
+"better_translation": "better translation here",}}]
 Reply OK to this message and I'll send you text to be translated to {target_language} afterwards.'''
     args = {
         'target_language': target_language,
@@ -149,15 +148,15 @@ Reply OK to this message and I'll send you text to be translated to {target_lang
             return join_spliter.join([await translate(first_half,**args),await translate(second_half,**args)])
     
     if two_pass==True:
-        dialogue_msg=[
-        {"role": "system", "content": system_message},
-        {"role": "user", "content": translation_prompt},
-        {"role": "assistant", "content": "OK"},
-        {"role": "user", "content": text}
+        dialogue_msg= [
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": translation_prompt},
+            {"role": "assistant", "content": "OK"},
+            {"role": "user", "content": f'{{"text": "{text}","target_language": "{target_language}",}}'},
         ]
 
         response_text=await askai(dialogue_msg,model=model)
-        pattern = r'{"Better translation"\s?:\s?"(.*?)"}'
+        pattern = r'"better_translation":[\s\n]*[“"”]([\s\S]*?)[“"”]?,?[\s\n]*}'
         match = re.search(pattern, response_text)
         if match:
             return match.group(1)
