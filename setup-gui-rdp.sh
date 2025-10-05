@@ -13,6 +13,7 @@ usermod -aG sudo $USERNAME
 
 # === 3. Install Xfce GUI ===
 apt install -y xfce4 xfce4-goodies
+apt install -y fonts-noto-cjk fonts-noto-cjk-extra
 
 # === 4. Install and configure xRDP ===
 apt install -y xrdp
